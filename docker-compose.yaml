@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    networks:
+      - monitoring-network
+    ports:
+      - "4317:4317"    # OTLP gRPC endpoint
+      - "4318:4318"    # OTLP HTTP endpoint
+      - "8889:8889"    # Prometheus metrics endpoint
+    volumes:
+      - ./collector-config.yaml:/etc/collector-config.yaml
+    command: ["--config", "/etc/collector-config.yaml"]
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    networks:
+      - monitoring-network
+    ports:
+      - "9090:9090"    # Prometheus dashboard
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    networks:
+      - monitoring-network
+    ports:
+      - "3200:3200"    # Tempo HTTP query endpoint
+    volumes:
+      - ./tempo-config.yaml:/etc/tempo/tempo.yaml  # Config file mapping
+      - ./traces:/etc/tempo/traces  # Store traces in the current directory
+
+networks:
+  monitoring-network:
+    driver: bridge
